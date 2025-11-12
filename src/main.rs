@@ -27,14 +27,22 @@ fn benchmark(hll: &mut impl HyperLogLog<u64>, upto: u64) {
     print!("Expected: {:>12}", upto.to_formatted_string(&Locale::en));
     _ = io::stdout().flush();
     _ = io::stdin().read_line(&mut s);
-    println!("Actual:   {:>12}, Error: {:.2}%", (count.trunc() as u64).to_formatted_string(&Locale::en), percent / 100.);
+    println!(
+        "Actual:   {:>12}, Error: {:.2}%",
+        (count.trunc() as u64).to_formatted_string(&Locale::en),
+        percent / 100.
+    );
     _ = io::stdin().read_line(&mut s);
 }
 
 fn main() {
-    let precision = env::args().skip(1).find(|_| true).and_then(|x| x.parse::<u8>().ok()).unwrap_or(16);
+    let precision = env::args()
+        .skip(1)
+        .next()
+        .and_then(|x| x.parse::<u8>().ok())
+        .unwrap_or(16);
     let mut hll = HyperLogLogPlus::<u64, _>::new(precision, RandomState::new()).unwrap();
-    println!("\nUsing 2^{precision} registers\n");
+    println!("\nUsing 2^{precision} ({}) registers\n", 1_u32 << precision);
     insert_upto(&mut hll, 100_000);
     benchmark(&mut hll, 100_000);
 
@@ -52,7 +60,8 @@ fn main() {
 
     insert_upto(&mut hll, 100_000_000);
     benchmark(&mut hll, 100_000_000);
-    { // Loading dots
+    {
+        // Loading dots
         B.store(true, Relaxed);
         spawn(|| {
             while B.load(Relaxed) {
